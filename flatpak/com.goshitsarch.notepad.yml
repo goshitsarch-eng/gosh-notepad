@@ -34,10 +34,8 @@ modules:
       - type: file
         path: notepad.desktop
       - type: file
-        path: ../src-tauri/icons/128x128.png
+        path: ../assets/icons/128x128.png
       - type: file
-        path: ../src-tauri/icons/128x128@2x.png
-      - type: file
-        path: ../src-tauri/icons/32x32.png
+        path: ../assets/icons/32x32.png
       - type: file
         path: com.goshitsarch.notepad.metainfo.xml
