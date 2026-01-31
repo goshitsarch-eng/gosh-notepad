@@ -1,0 +1,580 @@
+/* Reset and base styles for Windows 98 look */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background-color: #1e1e1e;
+}
+
+/* Linux-friendly UI font fallbacks */
+body,
+button,
+input,
+label,
+select,
+textarea,
+.menu-bar,
+.menu-title,
+.menu-option,
+.status-bar-field {
+  font-family: "Pixelated MS Sans Serif", Arial, "DejaVu Sans", "Liberation Sans", "Noto Sans", sans-serif;
+}
+
+.notepad-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 0;
+  background-color: #1e1e1e;
+}
+
+/* Main text editor area — dark mode default */
+.notepad-editor {
+  flex: 1;
+  margin: 2px;
+  padding: 2px 4px;
+  border: none;
+  resize: none;
+  font-family: 'Lucida Console', 'Courier New', 'DejaVu Sans Mono', 'Liberation Mono', 'Ubuntu Mono', 'Noto Sans Mono', monospace;
+  font-size: 12px;
+  line-height: 1.2;
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+  outline: none;
+  box-shadow: inset -1px -1px #3d3d3d,
+              inset 1px 1px #1a1a1a,
+              inset -2px -2px #333333,
+              inset 2px 2px #0a0a0a;
+}
+
+.notepad-editor:focus {
+  outline: none;
+}
+
+/* Word wrap toggle */
+.notepad-editor.word-wrap {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: hidden;
+}
+
+.notepad-editor.no-wrap {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* Status bar styling — dark mode default */
+.status-bar {
+  display: flex;
+  height: 22px;
+  padding: 2px;
+  background-color: #2d2d2d;
+  border-top: 1px solid #1a1a1a;
+  flex-shrink: 0;
+}
+
+.status-bar.hidden {
+  display: none;
+}
+
+.status-bar-field {
+  flex: 1;
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: right;
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+  box-shadow: inset -1px -1px #333333,
+              inset 1px 1px #1a1a1a;
+}
+
+/* Dialog overlay — dark mode default */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-overlay.hidden {
+  display: none;
+}
+
+/* Dialog windows */
+.dialog-window {
+  min-width: 340px;
+  max-width: 90vw;
+}
+
+.dialog-window.dialog-small {
+  min-width: 240px;
+}
+
+.dialog-window.dialog-large {
+  min-width: 420px;
+}
+
+.dialog-window .window-body {
+  padding: 12px;
+}
+
+/* Button styling */
+.button-row {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.button-row button {
+  min-width: 75px;
+  padding: 4px 8px;
+}
+
+/* Field row styling */
+.field-row-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-row-stacked input[type="text"],
+.field-row-stacked input[type="number"] {
+  width: 100%;
+  padding: 3px 4px;
+}
+
+/* Font dialog specific styles */
+.font-selectors {
+  display: flex;
+  gap: 12px;
+}
+
+.font-column {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.font-column-small {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.font-column label,
+.font-column-small label {
+  font-size: 11px;
+}
+
+.font-column input,
+.font-column-small input {
+  width: 100%;
+  padding: 3px 4px;
+  font-size: 11px;
+  border: none;
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  box-shadow: inset -1px -1px #3d3d3d,
+              inset 1px 1px #1a1a1a,
+              inset -2px -2px #333333,
+              inset 2px 2px #0a0a0a;
+}
+
+.font-listbox {
+  width: 100%;
+  height: 96px;
+  overflow-y: auto;
+  background-color: #1e1e1e;
+  box-shadow: inset -1px -1px #3d3d3d,
+              inset 1px 1px #1a1a1a,
+              inset -2px -2px #333333,
+              inset 2px 2px #0a0a0a;
+}
+
+.font-listbox-item {
+  padding: 2px 4px;
+  font-size: 11px;
+  cursor: default;
+  white-space: nowrap;
+  color: #e0e0e0;
+}
+
+.font-listbox-item:hover {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+.font-listbox-item.selected {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+#font-sample {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  font-size: 18px;
+  box-shadow: inset -1px -1px #3d3d3d,
+              inset 1px 1px #1a1a1a,
+              inset -2px -2px #333333,
+              inset 2px 2px #0a0a0a;
+}
+
+/* About dialog styles */
+.about-content {
+  text-align: center;
+  padding: 16px;
+}
+
+.about-icon {
+  margin-bottom: 8px;
+}
+
+.about-content h3 {
+  margin: 8px 0;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.about-content p {
+  margin: 4px 0;
+  font-size: 11px;
+}
+
+.about-description {
+  color: #a0a0a0;
+}
+
+.about-content hr {
+  border: none;
+  border-top: 1px solid #1a1a1a;
+  border-bottom: 1px solid #4a4a4a;
+  margin: 12px 0;
+}
+
+/* Fieldset styling */
+fieldset {
+  margin: 0;
+  padding: 8px;
+  border-color: #4a4a4a;
+}
+
+fieldset legend {
+  padding: 0 4px;
+  color: #e0e0e0;
+}
+
+/* Selection highlight */
+::selection {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+/* Scrollbar styling for Windows 98 look */
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3d3d3d;
+  border: 1px solid;
+  border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a;
+}
+
+::-webkit-scrollbar-button {
+  background: #3d3d3d;
+  border: 1px solid;
+  border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a;
+  width: 16px;
+  height: 16px;
+}
+
+::-webkit-scrollbar-corner {
+  background: #2d2d2d;
+}
+
+/* ===== Custom Menu Bar — dark mode default ===== */
+.menu-bar {
+  display: flex;
+  background-color: #2d2d2d;
+  padding: 2px 0;
+  border-bottom: 1px solid #1a1a1a;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.menu-item {
+  position: relative;
+}
+
+.menu-title {
+  display: block;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: default;
+  color: #e0e0e0;
+}
+
+.menu-item:hover > .menu-title,
+.menu-item.active > .menu-title {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+.menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background-color: #2d2d2d;
+  border: 1px solid;
+  border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  padding: 2px;
+}
+
+.menu-item.active > .menu-dropdown {
+  display: block;
+}
+
+.menu-option {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 20px 4px 24px;
+  font-size: 11px;
+  cursor: default;
+  position: relative;
+  color: #e0e0e0;
+}
+
+.menu-option:hover:not(.disabled) {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+.menu-option.disabled {
+  color: #666666;
+}
+
+.menu-option .shortcut {
+  margin-left: 20px;
+  color: inherit;
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 4px 2px;
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #4a4a4a;
+}
+
+/* Checkable menu items */
+.menu-option.checkable::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+}
+
+.menu-option.checkable.checked::before {
+  content: '\2713';
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* Context menu */
+.context-menu {
+  position: fixed;
+  min-width: 160px;
+  background-color: #2d2d2d;
+  border: 1px solid;
+  border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  padding: 2px;
+}
+
+body:not(.dark-mode) .context-menu {
+  background-color: #c0c0c0;
+  border-color: #ffffff #808080 #808080 #ffffff;
+}
+
+/* ===== Dark Mode (default) — 98.css overrides ===== */
+body.dark-mode .window {
+  background-color: #2d2d2d;
+}
+
+body.dark-mode .title-bar {
+  background: linear-gradient(90deg, #4a4a4a, #2d2d2d);
+}
+
+body.dark-mode .window-body {
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+}
+
+body.dark-mode input[type="text"],
+body.dark-mode input[type="number"] {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+  border-color: #1a1a1a;
+}
+
+body.dark-mode button {
+  background-color: #3d3d3d;
+  color: #e0e0e0;
+}
+
+/* ===== Light Mode (toggle-on) ===== */
+body:not(.dark-mode) {
+  background-color: #c0c0c0;
+}
+
+body:not(.dark-mode) .notepad-container {
+  background-color: #c0c0c0;
+}
+
+body:not(.dark-mode) .notepad-editor {
+  background-color: #ffffff;
+  color: #000000;
+  box-shadow: inset -1px -1px #ffffff,
+              inset 1px 1px #808080,
+              inset -2px -2px #dfdfdf,
+              inset 2px 2px #0a0a0a;
+}
+
+body:not(.dark-mode) .menu-bar {
+  background-color: #c0c0c0;
+  border-bottom-color: #808080;
+}
+
+body:not(.dark-mode) .menu-title {
+  color: #000000;
+}
+
+body:not(.dark-mode) .menu-dropdown {
+  background-color: #c0c0c0;
+  border-color: #ffffff #808080 #808080 #ffffff;
+}
+
+body:not(.dark-mode) .menu-option {
+  color: #000000;
+}
+
+body:not(.dark-mode) .menu-option.disabled {
+  color: #808080;
+}
+
+body:not(.dark-mode) .menu-separator {
+  background-color: #808080;
+  border-bottom-color: #ffffff;
+}
+
+body:not(.dark-mode) .status-bar {
+  background-color: #c0c0c0;
+  border-top-color: #808080;
+}
+
+body:not(.dark-mode) .status-bar-field {
+  background-color: #c0c0c0;
+  color: #000000;
+  box-shadow: inset -1px -1px #dfdfdf,
+              inset 1px 1px #808080;
+}
+
+body:not(.dark-mode) .dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+body:not(.dark-mode) .font-listbox {
+  background-color: #ffffff;
+  box-shadow: inset -1px -1px #ffffff,
+              inset 1px 1px #808080,
+              inset -2px -2px #dfdfdf,
+              inset 2px 2px #0a0a0a;
+}
+
+body:not(.dark-mode) .font-listbox-item {
+  color: #000000;
+}
+
+body:not(.dark-mode) .font-column input,
+body:not(.dark-mode) .font-column-small input {
+  background-color: #ffffff;
+  color: #000000;
+  box-shadow: inset -1px -1px #ffffff,
+              inset 1px 1px #808080,
+              inset -2px -2px #dfdfdf,
+              inset 2px 2px #0a0a0a;
+}
+
+body:not(.dark-mode) #font-sample {
+  background-color: #ffffff;
+  color: #000000;
+  box-shadow: inset -1px -1px #ffffff,
+              inset 1px 1px #808080,
+              inset -2px -2px #dfdfdf,
+              inset 2px 2px #0a0a0a;
+}
+
+body:not(.dark-mode) fieldset {
+  border-color: #808080;
+}
+
+body:not(.dark-mode) fieldset legend {
+  color: #000000;
+}
+
+body:not(.dark-mode) .about-content hr {
+  border-top-color: #808080;
+  border-bottom-color: #ffffff;
+}
+
+body:not(.dark-mode) .about-description {
+  color: #404040;
+}
+
+body:not(.dark-mode) ::-webkit-scrollbar-track {
+  background: #c0c0c0;
+}
+
+body:not(.dark-mode) ::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-color: #ffffff #808080 #808080 #ffffff;
+}
+
+body:not(.dark-mode) ::-webkit-scrollbar-button {
+  background: #c0c0c0;
+  border-color: #ffffff #808080 #808080 #ffffff;
+}
+
+body:not(.dark-mode) ::-webkit-scrollbar-corner {
+  background: #c0c0c0;
+}

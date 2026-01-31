@@ -1,0 +1,43 @@
+app-id: com.goshitsarch.notepad
+runtime: org.gnome.Platform
+runtime-version: '49'
+sdk: org.gnome.Sdk
+command: notepad
+
+finish-args:
+  # X11 + Wayland
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  # GPU acceleration
+  - --device=dri
+  # Filesystem access for opening/saving files
+  - --filesystem=home
+  - --filesystem=xdg-documents
+  # For file dialogs
+  - --talk-name=org.freedesktop.portal.FileChooser
+  - --talk-name=org.freedesktop.portal.Desktop
+
+modules:
+  - name: notepad
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 gosh-notepad /app/bin/notepad
+      - install -Dm644 notepad.desktop /app/share/applications/com.goshitsarch.notepad.desktop
+      - install -Dm644 128x128@2x.png /app/share/icons/hicolor/256x256/apps/com.goshitsarch.notepad.png
+      - install -Dm644 128x128.png /app/share/icons/hicolor/128x128/apps/com.goshitsarch.notepad.png
+      - install -Dm644 32x32.png /app/share/icons/hicolor/32x32/apps/com.goshitsarch.notepad.png
+      - install -Dm644 com.goshitsarch.notepad.metainfo.xml /app/share/metainfo/com.goshitsarch.notepad.metainfo.xml
+    sources:
+      - type: file
+        path: gosh-notepad
+      - type: file
+        path: notepad.desktop
+      - type: file
+        path: ../src-tauri/icons/128x128.png
+      - type: file
+        path: ../src-tauri/icons/128x128@2x.png
+      - type: file
+        path: ../src-tauri/icons/32x32.png
+      - type: file
+        path: com.goshitsarch.notepad.metainfo.xml

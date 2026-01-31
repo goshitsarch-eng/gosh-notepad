@@ -1,0 +1,32 @@
+appId: com.goshitsarch.notepad
+publish:
+  provider: github
+  owner: goshitsarch-eng
+  repo: gosh-notepad-cloned
+productName: Gosh Notepad
+directories:
+  output: release
+  buildResources: assets
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+asar: true
+win:
+  target:
+    - nsis
+  icon: assets/icons/icon.png
+mac:
+  target:
+    - dmg
+  icon: assets/icons/icon.icns
+linux:
+  target:
+    - AppImage
+    - deb
+    - rpm
+  icon: assets/icons
+  category: Utility
+  desktop:
+    entry:
+      StartupWMClass: gosh-notepad

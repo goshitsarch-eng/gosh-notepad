@@ -1,0 +1,56 @@
+# Maintainer: Goshitsarch <https://github.com/goshitsarch-eng>
+pkgname=gosh-notepad
+pkgver=2.0.1
+pkgrel=1
+pkgdesc="A Windows 95/98 Notepad clone built with Electron"
+arch=('x86_64')
+url="https://github.com/goshitsarch-eng/Gosh-Notepad-Clone"
+license=('MIT')
+depends=('electron')
+makedepends=('npm' 'nodejs')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "Gosh-Notepad-Clone-$pkgver"
+  npm install
+  npx vite build
+}
+
+package() {
+  cd "Gosh-Notepad-Clone-$pkgver"
+
+  # Install app files
+  install -dm755 "$pkgdir/usr/lib/$pkgname"
+  cp -r dist electron package.json "$pkgdir/usr/lib/$pkgname/"
+
+  # Install production node_modules only
+  cd "$pkgdir/usr/lib/$pkgname"
+  cp "$srcdir/Gosh-Notepad-Clone-$pkgver/package.json" .
+  npm install --omit=dev --ignore-scripts
+  cd "$srcdir/Gosh-Notepad-Clone-$pkgver"
+
+  # Launcher script using system electron
+  install -Dm755 /dev/stdin "$pkgdir/usr/bin/$pkgname" <<'EOF'
+#!/bin/sh
+exec electron /usr/lib/gosh-notepad/electron/main.js "$@"
+EOF
+
+  # Desktop entry
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/$pkgname.desktop" <<'EOF'
+[Desktop Entry]
+Name=Notepad
+Comment=Windows 95/98 Notepad Clone
+Exec=gosh-notepad %F
+Icon=gosh-notepad
+Terminal=false
+Type=Application
+Categories=Utility;TextEditor;
+MimeType=text/plain;text/x-log;
+Keywords=text;editor;notepad;
+StartupWMClass=gosh-notepad
+EOF
+
+  # Icon
+  install -Dm644 assets/icons/icon.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/$pkgname.png"
+}

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.goshitsarch.notepad</id>
+  <name>Notepad</name>
+  <summary>Windows 95/98 Notepad Clone</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0</project_license>
+  <description>
+    <p>
+      A faithful Windows 95/98 Notepad clone built with Tauri and styled with 98.css
+      for an authentic retro experience.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>Classic Windows 98 user interface</li>
+      <li>File operations (New, Open, Save, Save As)</li>
+      <li>Edit functions (Cut, Copy, Paste, Find, Replace)</li>
+      <li>Word wrap toggle</li>
+      <li>Font customization</li>
+      <li>Dark mode support</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">com.goshitsarch.notepad.desktop</launchable>
+  <url type="homepage">https://github.com/goshitsarch-eng/Gosh-Notepad-Clone</url>
+  <url type="bugtracker">https://github.com/goshitsarch-eng/Gosh-Notepad-Clone/issues</url>
+  <developer_name>Goshitsarch</developer_name>
+  <content_rating type="oars-1.1" />
+  <categories>
+    <category>Utility</category>
+    <category>TextEditor</category>
+  </categories>
+  <provides>
+    <binary>notepad</binary>
+  </provides>
+</component>
