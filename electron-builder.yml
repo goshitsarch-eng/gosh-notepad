@@ -25,6 +25,7 @@ linux:
     - AppImage
     - deb
     - rpm
+    - tar.gz
   icon: assets/icons
   category: Utility
   desktop:
