@@ -18,7 +18,7 @@ jobs:
       - run: npm ci
       - run: sudo apt-get install -y rpm
       - run: npx vite build
-      - run: npx electron-builder --linux deb rpm tar.gz --x64
+      - run: npx electron-builder --linux deb rpm tar.gz --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: linux-x64
@@ -38,7 +38,7 @@ jobs:
       - run: npm ci
       - run: sudo apt-get install -y rpm
       - run: npx vite build
-      - run: npx electron-builder --linux deb rpm tar.gz --arm64
+      - run: npx electron-builder --linux deb rpm tar.gz --arm64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: linux-arm64
@@ -57,7 +57,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build
-      - run: npx electron-builder --win --x64
+      - run: npx electron-builder --win --x64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: windows-x64
@@ -73,7 +73,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build
-      - run: npx electron-builder --win --arm64
+      - run: npx electron-builder --win --arm64 --publish never
       - uses: actions/upload-artifact@v4
         with:
           name: windows-arm64
