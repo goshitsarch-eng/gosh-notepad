@@ -12,7 +12,7 @@ We also provide Windows and macOS builds not as a compromise, but as an on-ramp.
 
 This is a fully functional text editor styled to look and feel like classic Windows 98 Notepad. It supports creating, opening, saving, and editing text files with find & replace, go-to-line, font customization, word wrap, and a toggleable status bar showing cursor position. There's a dark mode enabled by default, and all the keyboard shortcuts you'd expect from the original (Ctrl+S, Ctrl+F, Ctrl+H, Ctrl+G, F3, F5, and so on). Unsaved changes are caught before closing. Page Setup is the only menu item that isn't implemented.
 
-Font and dark mode preferences don't persist between sessions. Print uses the system print dialog, which varies by platform.
+Font preferences don't persist between sessions. Print uses the system print dialog, which varies by platform.
 
 ## Installation
 
