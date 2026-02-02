@@ -26,7 +26,7 @@ npm run dev       # development
 npm run build     # production build for your platform
 ```
 
-You'll need [Node.js](https://nodejs.org/) 18 or later. Platform-specific builds are available via `npm run build:win`, `npm run build:mac`, and `npm run build:linux`. Built artifacts end up in the `release/` directory.
+You'll need [Node.js](https://nodejs.org/) 24.13.0 (LTS) or later. Platform-specific builds are available via `npm run build:win`, `npm run build:mac`, and `npm run build:linux`. Built artifacts end up in the `release/` directory.
 
 An [AUR package](https://aur.archlinux.org/packages/gosh-notepad) is also available for Arch Linux users.
 
