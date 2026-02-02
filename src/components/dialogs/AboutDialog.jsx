@@ -18,7 +18,7 @@ export default function AboutDialog({ onClose }) {
             </svg>
           </div>
           <h3>Notepad</h3>
-          <p>Version 3.0.0</p>
+          <p>Version 3.0.1</p>
           <hr />
           <p className="about-description">
             A Windows 95/98 Notepad clone<br />
