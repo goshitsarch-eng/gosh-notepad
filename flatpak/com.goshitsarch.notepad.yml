@@ -24,7 +24,7 @@ modules:
     build-commands:
       - install -Dm755 gosh-notepad /app/bin/notepad
       - install -Dm644 notepad.desktop /app/share/applications/com.goshitsarch.notepad.desktop
-      - install -Dm644 128x128@2x.png /app/share/icons/hicolor/256x256/apps/com.goshitsarch.notepad.png
+      - install -Dm644 256x256.png /app/share/icons/hicolor/256x256/apps/com.goshitsarch.notepad.png
       - install -Dm644 128x128.png /app/share/icons/hicolor/128x128/apps/com.goshitsarch.notepad.png
       - install -Dm644 32x32.png /app/share/icons/hicolor/32x32/apps/com.goshitsarch.notepad.png
       - install -Dm644 com.goshitsarch.notepad.metainfo.xml /app/share/metainfo/com.goshitsarch.notepad.metainfo.xml
@@ -33,6 +33,8 @@ modules:
         path: gosh-notepad
       - type: file
         path: notepad.desktop
+      - type: file
+        path: ../assets/icons/256x256.png
       - type: file
         path: ../assets/icons/128x128.png
       - type: file

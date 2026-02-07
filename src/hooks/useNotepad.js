@@ -1,16 +1,23 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
 const api = window.electronAPI || {
-  newFile: () => Promise.resolve({ success: false }),
   openFile: () => Promise.resolve({ success: false }),
   saveFile: () => Promise.resolve({ success: false }),
   saveFileAs: () => Promise.resolve({ success: false }),
+  readFileByPath: () => Promise.resolve({ success: false }),
   printDocument: () => {},
   setWindowTitle: () => {},
   quitApp: () => {},
   forceQuit: () => {},
   onCheckUnsavedBeforeClose: () => {},
   removeCheckUnsavedBeforeClose: () => {},
+  onOpenFileFromArg: () => {},
+  getPreferences: () => Promise.resolve({}),
+  setPreferences: () => Promise.resolve({ success: true }),
+  getSystemDarkMode: () => Promise.resolve(false),
+  saveRecovery: () => Promise.resolve({ success: true }),
+  checkRecovery: () => Promise.resolve({ exists: false }),
+  clearRecovery: () => Promise.resolve({ success: true }),
 };
 
 export function useNotepad() {
@@ -18,6 +25,8 @@ export function useNotepad() {
 
   const [currentFilePath, setCurrentFilePath] = useState(null);
   const [originalContent, setOriginalContent] = useState('');
+  const [lineEnding, setLineEnding] = useState('\n'); // '\n' (LF) or '\r\n' (CRLF)
+  const [encoding, setEncoding] = useState('UTF-8');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [wordWrap, setWordWrap] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
@@ -32,6 +41,21 @@ export function useNotepad() {
     size: 12,
   });
 
+  const [messageDialog, setMessageDialog] = useState(null); // { title, message }
+  const [recoveryData, setRecoveryData] = useState(null);
+
+  const showMessage = useCallback((message, title = 'Notepad') => {
+    setMessageDialog({ title, message });
+  }, []);
+
+  const closeMessage = useCallback(() => {
+    setMessageDialog(null);
+  }, []);
+
+  // Lifted find/replace state — persists across dialog open/close
+  const [findState, setFindState] = useState({ query: '', matchCase: false, direction: 'down' });
+  const [replaceState, setReplaceState] = useState({ findQuery: '', replaceWith: '', matchCase: false });
+
   const lastSearchRef = useRef({
     query: '',
     direction: 'down',
@@ -39,6 +63,7 @@ export function useNotepad() {
   });
 
   const unsavedResolveRef = useRef(null);
+  const handleSaveRef = useRef(null);
 
   // Update title
   const updateTitle = useCallback((filePath, unsaved) => {
@@ -59,14 +84,27 @@ export function useNotepad() {
     setCursorPosition({ line: lines.length, col: lines[lines.length - 1].length + 1 });
   }, []);
 
-  // Check content changes
+  // Check content changes — set dirty immediately, debounce the accurate string comparison
+  const dirtyCheckTimer = useRef(null);
   const handleEditorInput = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    const unsaved = editor.value !== originalContent;
-    setHasUnsavedChanges(unsaved);
-    updateTitle(currentFilePath, unsaved);
-  }, [originalContent, currentFilePath, updateTitle]);
+
+    // Immediately mark as unsaved (avoids O(n) comparison on every keystroke)
+    if (!hasUnsavedChanges) {
+      setHasUnsavedChanges(true);
+      updateTitle(currentFilePath, true);
+    }
+
+    // Debounced accurate check (handles undo-back-to-original)
+    clearTimeout(dirtyCheckTimer.current);
+    dirtyCheckTimer.current = setTimeout(() => {
+      if (!editorRef.current) return;
+      const isActuallyDirty = editorRef.current.value !== originalContent;
+      setHasUnsavedChanges(isActuallyDirty);
+      updateTitle(currentFilePath, isActuallyDirty);
+    }, 500);
+  }, [hasUnsavedChanges, originalContent, currentFilePath, updateTitle]);
 
   // Unsaved changes dialog
   const showUnsavedDialog = useCallback((filePath) => {
@@ -89,7 +127,8 @@ export function useNotepad() {
     const result = await showUnsavedDialog(currentFilePath);
     if (result === 2) return false; // Cancel
     if (result === 0) {
-      const saved = await handleSave();
+      // Issue #25: Use ref to avoid stale closure / circular dependency with handleSave
+      const saved = await handleSaveRef.current();
       if (!saved) return false;
     }
     return true;
@@ -104,9 +143,12 @@ export function useNotepad() {
     if (editor) editor.value = '';
     setCurrentFilePath(null);
     setOriginalContent('');
+    setEncoding('UTF-8');
+    setLineEnding('\n');
     setHasUnsavedChanges(false);
     updateTitle(null, false);
     updateCursorPosition();
+    api.clearRecovery();
     if (editor) editor.focus();
   }, [checkUnsavedChanges, updateTitle, updateCursorPosition]);
 
@@ -116,16 +158,23 @@ export function useNotepad() {
 
     const result = await api.openFile();
     if (result.success) {
+      // Detect line endings before textarea normalizes them to LF
+      const detectedEnding = result.content.includes('\r\n') ? '\r\n' : '\n';
+      setLineEnding(detectedEnding);
+      setEncoding(result.encoding || 'UTF-8');
       const editor = editorRef.current;
       if (editor) editor.value = result.content;
       setCurrentFilePath(result.path);
-      setOriginalContent(result.content);
+      setOriginalContent(result.content.replace(/\r\n/g, '\n')); // Normalize for comparison
       setHasUnsavedChanges(false);
       updateTitle(result.path, false);
       updateCursorPosition();
+      api.clearRecovery();
       if (editor) editor.focus();
+    } else if (result.error) {
+      showMessage('Could not open file: ' + result.error);
     }
-  }, [checkUnsavedChanges, updateTitle, updateCursorPosition]);
+  }, [checkUnsavedChanges, updateTitle, updateCursorPosition, showMessage]);
 
   const handleSave = useCallback(async () => {
     const editor = editorRef.current;
@@ -135,30 +184,40 @@ export function useNotepad() {
       return handleSaveAs();
     }
 
-    const result = await api.saveFile(currentFilePath, editor.value);
+    let contentToSave = editor.value;
+    if (lineEnding === '\r\n') contentToSave = contentToSave.replace(/\n/g, '\r\n');
+    const result = await api.saveFile(currentFilePath, contentToSave, encoding);
     if (result.success) {
       setOriginalContent(editor.value);
       setHasUnsavedChanges(false);
       updateTitle(currentFilePath, false);
+      api.clearRecovery();
       return true;
     }
+    if (result.error) showMessage('Could not save file: ' + result.error);
     return false;
-  }, [currentFilePath, updateTitle]);
+  }, [currentFilePath, lineEnding, encoding, updateTitle, showMessage]);
+
+  // Keep ref in sync so checkUnsavedChanges always calls the latest handleSave
+  handleSaveRef.current = handleSave;
 
   const handleSaveAs = useCallback(async () => {
     const editor = editorRef.current;
     if (!editor) return false;
 
-    const result = await api.saveFileAs(editor.value);
+    let contentToSave = editor.value;
+    if (lineEnding === '\r\n') contentToSave = contentToSave.replace(/\n/g, '\r\n');
+    const result = await api.saveFileAs(contentToSave, encoding);
     if (result.success) {
       setCurrentFilePath(result.path);
       setOriginalContent(editor.value);
       setHasUnsavedChanges(false);
       updateTitle(result.path, false);
+      api.clearRecovery();
       return true;
     }
     return false;
-  }, [updateTitle]);
+  }, [lineEnding, encoding, updateTitle]);
 
   const handlePrint = useCallback(() => {
     api.printDocument();
@@ -176,12 +235,31 @@ export function useNotepad() {
     document.execCommand('undo');
   }, []);
 
-  const handleCut = useCallback(() => {
-    document.execCommand('cut');
+  const handleRedo = useCallback(() => {
+    document.execCommand('redo');
   }, []);
 
-  const handleCopy = useCallback(() => {
-    document.execCommand('copy');
+  const handleCut = useCallback(async () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    if (start === end) return;
+    const selected = editor.value.substring(start, end);
+    await navigator.clipboard.writeText(selected);
+    editor.focus();
+    // Use insertText to preserve undo history
+    document.execCommand('insertText', false, '');
+    handleEditorInput();
+  }, [handleEditorInput]);
+
+  const handleCopy = useCallback(async () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    if (start === end) return;
+    await navigator.clipboard.writeText(editor.value.substring(start, end));
   }, []);
 
   const handlePaste = useCallback(async () => {
@@ -189,10 +267,9 @@ export function useNotepad() {
     if (!editor) return;
     try {
       const text = await navigator.clipboard.readText();
-      const start = editor.selectionStart;
-      const end = editor.selectionEnd;
-      editor.value = editor.value.slice(0, start) + text + editor.value.slice(end);
-      editor.selectionStart = editor.selectionEnd = start + text.length;
+      editor.focus();
+      // Use insertText to preserve undo history (Issue #16)
+      document.execCommand('insertText', false, text);
       handleEditorInput();
     } catch (err) {
       console.error('Failed to read clipboard:', err);
@@ -202,11 +279,9 @@ export function useNotepad() {
   const handleDelete = useCallback(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    if (start !== end) {
-      editor.value = editor.value.slice(0, start) + editor.value.slice(end);
-      editor.selectionStart = editor.selectionEnd = start;
+    if (editor.selectionStart !== editor.selectionEnd) {
+      editor.focus();
+      document.execCommand('insertText', false, '');
       handleEditorInput();
     }
   }, [handleEditorInput]);
@@ -223,10 +298,8 @@ export function useNotepad() {
     const timeString = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     const dateString = now.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
     const insertion = `${timeString} ${dateString}`;
-    const pos = editor.selectionStart;
-    editor.value = editor.value.slice(0, pos) + insertion + editor.value.slice(editor.selectionEnd);
-    editor.selectionStart = editor.selectionEnd = pos + insertion.length;
     editor.focus();
+    document.execCommand('insertText', false, insertion);
     handleEditorInput();
   }, [handleEditorInput]);
 
@@ -249,7 +322,7 @@ export function useNotepad() {
         editor.setSelectionRange(foundIndex, foundIndex + query.length);
         editor.focus();
       } else {
-        alert('Cannot find "' + query + '"');
+        showMessage('Cannot find "' + query + '"');
       }
     } else {
       const startPos = editor.selectionStart;
@@ -259,10 +332,10 @@ export function useNotepad() {
         editor.setSelectionRange(foundIndex, foundIndex + query.length);
         editor.focus();
       } else {
-        alert('Cannot find "' + query + '"');
+        showMessage('Cannot find "' + query + '"');
       }
     }
-  }, []);
+  }, [showMessage]);
 
   const handleFindNext = useCallback(() => {
     const { query, caseSensitive, direction } = lastSearchRef.current;
@@ -282,9 +355,8 @@ export function useNotepad() {
     const compareQuery = matchCase ? findQuery : findQuery.toLowerCase();
 
     if (compareSelected === compareQuery) {
-      const start = editor.selectionStart;
-      editor.value = editor.value.substring(0, start) + replaceWith + editor.value.substring(editor.selectionEnd);
-      editor.setSelectionRange(start, start + replaceWith.length);
+      editor.focus();
+      document.execCommand('insertText', false, replaceWith);
       handleEditorInput();
     }
 
@@ -298,25 +370,19 @@ export function useNotepad() {
     let text = editor.value;
     let count = 0;
 
-    if (matchCase) {
-      while (text.includes(findQuery)) {
-        text = text.replace(findQuery, replaceWith);
-        count++;
-      }
-    } else {
-      const regex = new RegExp(findQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-      const matches = text.match(regex);
-      count = matches ? matches.length : 0;
-      text = text.replace(regex, replaceWith.replace(/\$/g, '$$$$'));
-    }
+    const flags = matchCase ? 'g' : 'gi';
+    const regex = new RegExp(findQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
+    const matches = text.match(regex);
+    count = matches ? matches.length : 0;
+    text = text.replace(regex, replaceWith.replace(/\$/g, '$$$$'));
 
     if (count > 0) {
       editor.value = text;
       handleEditorInput();
     }
 
-    alert(`Replaced ${count} occurrence(s).`);
-  }, [handleEditorInput]);
+    showMessage(`Replaced ${count} occurrence(s).`);
+  }, [handleEditorInput, showMessage]);
 
   const performGoTo = useCallback((lineNum) => {
     const editor = editorRef.current;
@@ -324,7 +390,7 @@ export function useNotepad() {
 
     const lines = editor.value.split('\n');
     if (lineNum > lines.length) {
-      alert('The line number is beyond the total number of lines');
+      showMessage('The line number is beyond the total number of lines');
       return;
     }
 
@@ -337,7 +403,30 @@ export function useNotepad() {
     editor.focus();
     setActiveDialog(null);
     updateCursorPosition();
-  }, [updateCursorPosition]);
+  }, [updateCursorPosition, showMessage]);
+
+  // Drag-and-drop file opening
+  const handleFileDrop = useCallback(async (filePath) => {
+    const canProceed = await checkUnsavedChanges();
+    if (!canProceed) return;
+    const result = await api.readFileByPath(filePath);
+    if (result.success) {
+      const detectedEnding = result.content.includes('\r\n') ? '\r\n' : '\n';
+      setLineEnding(detectedEnding);
+      setEncoding(result.encoding || 'UTF-8');
+      const editor = editorRef.current;
+      if (editor) editor.value = result.content;
+      setCurrentFilePath(result.path);
+      setOriginalContent(result.content.replace(/\r\n/g, '\n'));
+      setHasUnsavedChanges(false);
+      updateTitle(result.path, false);
+      updateCursorPosition();
+      api.clearRecovery();
+      if (editor) editor.focus();
+    } else if (result.error) {
+      showMessage('Could not open file: ' + result.error);
+    }
+  }, [checkUnsavedChanges, updateTitle, updateCursorPosition, showMessage]);
 
   // Format operations
   const toggleWordWrap = useCallback(() => {
@@ -376,6 +465,7 @@ export function useNotepad() {
       case 'print': handlePrint(); break;
       case 'exit': handleExit(); break;
       case 'undo': handleUndo(); break;
+      case 'redo': handleRedo(); break;
       case 'cut': handleCut(); break;
       case 'copy': handleCopy(); break;
       case 'paste': handlePaste(); break;
@@ -395,10 +485,11 @@ export function useNotepad() {
     if (editorRef.current && !['find', 'replace', 'goTo', 'font', 'about'].includes(action)) {
       editorRef.current.focus();
     }
-  }, [handleNew, handleOpen, handleSave, handleSaveAs, handlePrint, handleExit, handleUndo, handleCut, handleCopy, handlePaste, handleDelete, handleFindNext, handleSelectAll, handleTimeDate, toggleWordWrap, toggleDarkMode, toggleStatusBar]);
+  }, [handleNew, handleOpen, handleSave, handleSaveAs, handlePrint, handleExit, handleUndo, handleRedo, handleCut, handleCopy, handlePaste, handleDelete, handleFindNext, handleSelectAll, handleTimeDate, toggleWordWrap, toggleDarkMode, toggleStatusBar]);
 
   // Keyboard shortcuts
   useEffect(() => {
+    const isMac = navigator.platform?.toUpperCase().includes('MAC') || navigator.userAgent?.includes('Macintosh');
     const handleKeyDown = (e) => {
       const ctrl = e.ctrlKey || e.metaKey;
       if (ctrl && e.key === 'n') { e.preventDefault(); handleNew(); }
@@ -406,16 +497,19 @@ export function useNotepad() {
       else if (ctrl && e.key === 's' && e.shiftKey) { e.preventDefault(); handleSaveAs(); }
       else if (ctrl && e.key === 's') { e.preventDefault(); handleSave(); }
       else if (ctrl && e.key === 'p') { e.preventDefault(); handlePrint(); }
-      else if (ctrl && e.key === 'f') { e.preventDefault(); setActiveDialog('find'); }
+      else if (ctrl && e.key === 'f' && !e.altKey) { e.preventDefault(); setActiveDialog('find'); }
       else if (e.key === 'F3') { e.preventDefault(); handleFindNext(); }
-      else if (ctrl && e.key === 'h') { e.preventDefault(); setActiveDialog('replace'); }
+      // On macOS, Cmd+H is system "Hide", so use Cmd+Option+F for Replace
+      else if (isMac && ctrl && e.altKey && e.key === 'f') { e.preventDefault(); setActiveDialog('replace'); }
+      else if (!isMac && ctrl && e.key === 'h') { e.preventDefault(); setActiveDialog('replace'); }
       else if (ctrl && e.key === 'g') { e.preventDefault(); setActiveDialog('goto'); }
+      else if (ctrl && e.key === 'y') { e.preventDefault(); handleRedo(); }
       else if (e.key === 'F5') { e.preventDefault(); handleTimeDate(); }
       else if (e.key === 'Escape') { setActiveDialog(null); }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleNew, handleOpen, handleSave, handleSaveAs, handlePrint, handleFindNext, handleTimeDate]);
+  }, [handleNew, handleOpen, handleSave, handleSaveAs, handlePrint, handleFindNext, handleRedo, handleTimeDate]);
 
   // Listen for close event from Electron
   useEffect(() => {
@@ -428,6 +522,117 @@ export function useNotepad() {
     api.onCheckUnsavedBeforeClose(handler);
     return () => api.removeCheckUnsavedBeforeClose(handler);
   }, [checkUnsavedChanges]);
+
+  // Issue #31: Listen for file-open events from CLI args or file associations
+  useEffect(() => {
+    const handleFileFromArg = async (filePath) => {
+      const result = await api.readFileByPath(filePath);
+      if (result.success) {
+        const detectedEnding = result.content.includes('\r\n') ? '\r\n' : '\n';
+        setLineEnding(detectedEnding);
+        setEncoding(result.encoding || 'UTF-8');
+        const editor = editorRef.current;
+        if (editor) editor.value = result.content;
+        setCurrentFilePath(result.path);
+        setOriginalContent(result.content.replace(/\r\n/g, '\n'));
+        setHasUnsavedChanges(false);
+        updateTitle(result.path, false);
+        updateCursorPosition();
+        api.clearRecovery();
+        if (editor) editor.focus();
+      }
+    };
+    api.onOpenFileFromArg(handleFileFromArg);
+  }, [updateTitle, updateCursorPosition]);
+
+  // Issue #11 + #13: Load preferences on mount, falling back to OS dark mode if no saved pref
+  const prefsLoaded = useRef(false);
+  useEffect(() => {
+    (async () => {
+      const prefs = await api.getPreferences();
+      prefsLoaded.current = true;
+
+      if (prefs.wordWrap !== undefined) setWordWrap(prefs.wordWrap);
+      if (prefs.statusBarVisible !== undefined) setStatusBarVisible(prefs.statusBarVisible);
+      if (prefs.font) setCurrentFont(prefs.font);
+
+      // Dark mode: prefer saved pref, fall back to OS setting
+      if (prefs.darkMode !== undefined) {
+        setDarkMode(prefs.darkMode);
+        document.body.classList.toggle('dark-mode', prefs.darkMode);
+      } else {
+        const systemDark = await api.getSystemDarkMode();
+        setDarkMode(systemDark);
+        document.body.classList.toggle('dark-mode', systemDark);
+      }
+
+      // Apply saved font to editor
+      if (prefs.font) {
+        const editor = editorRef.current;
+        if (editor) {
+          editor.style.fontFamily = prefs.font.family;
+          editor.style.fontSize = prefs.font.size + 'px';
+          editor.style.fontWeight = prefs.font.style?.includes('bold') ? 'bold' : 'normal';
+          editor.style.fontStyle = prefs.font.style?.includes('italic') ? 'italic' : 'normal';
+        }
+      }
+    })();
+  }, []);
+
+  // Issue #11: Save preferences when settings change (debounced)
+  useEffect(() => {
+    if (!prefsLoaded.current) return; // Don't save during initial load
+    const timer = setTimeout(() => {
+      api.setPreferences({ darkMode, wordWrap, statusBarVisible, font: currentFont });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [darkMode, wordWrap, statusBarVisible, currentFont]);
+
+  // Issue #36: Check for recovery file on startup
+  useEffect(() => {
+    (async () => {
+      const result = await api.checkRecovery();
+      if (result.exists && result.data) {
+        setRecoveryData(result.data);
+        setActiveDialog('recovery');
+      }
+    })();
+  }, []);
+
+  // Issue #36: Resolve recovery dialog
+  const resolveRecovery = useCallback((restore) => {
+    if (restore && recoveryData) {
+      const editor = editorRef.current;
+      if (editor) editor.value = recoveryData.content || '';
+      setCurrentFilePath(recoveryData.originalPath || null);
+      setEncoding(recoveryData.encoding || 'UTF-8');
+      setLineEnding(recoveryData.lineEnding || '\n');
+      setOriginalContent('');
+      setHasUnsavedChanges(true);
+      updateTitle(recoveryData.originalPath || null, true);
+      updateCursorPosition();
+    }
+    api.clearRecovery();
+    setRecoveryData(null);
+    setActiveDialog(null);
+  }, [recoveryData, updateTitle, updateCursorPosition]);
+
+  // Issue #36: Auto-save recovery file every 30s when there are unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const timer = setInterval(() => {
+      const editor = editorRef.current;
+      if (!editor) return;
+      api.saveRecovery({
+        content: editor.value,
+        originalPath: currentFilePath,
+        encoding,
+        lineEnding,
+        timestamp: Date.now(),
+      });
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [hasUnsavedChanges, currentFilePath, encoding, lineEnding]);
 
   // Initialize title
   useEffect(() => {
@@ -444,6 +649,8 @@ export function useNotepad() {
     cursorPosition,
     activeDialog,
     currentFont,
+    encoding,
+    lineEnding,
     setActiveDialog,
     handleMenuAction,
     handleEditorInput,
@@ -454,5 +661,14 @@ export function useNotepad() {
     performGoTo,
     applyFont,
     resolveUnsaved,
+    messageDialog,
+    closeMessage,
+    findState,
+    setFindState,
+    replaceState,
+    setReplaceState,
+    handleFileDrop,
+    recoveryData,
+    resolveRecovery,
   };
 }

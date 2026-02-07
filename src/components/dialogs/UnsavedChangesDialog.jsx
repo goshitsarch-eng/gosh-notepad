@@ -2,10 +2,10 @@ import React from 'react';
 
 export default function UnsavedChangesDialog({ filename, onSave, onDontSave, onCancel }) {
   return (
-    <div className="dialog-overlay">
+    <div className="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="unsaved-dialog-title">
       <div className="window dialog-window">
         <div className="title-bar">
-          <div className="title-bar-text">Notepad</div>
+          <div className="title-bar-text" id="unsaved-dialog-title">Notepad</div>
         </div>
         <div className="window-body">
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>

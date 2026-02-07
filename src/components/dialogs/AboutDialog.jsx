@@ -2,10 +2,10 @@ import React from 'react';
 
 export default function AboutDialog({ onClose }) {
   return (
-    <div className="dialog-overlay">
+    <div className="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="about-dialog-title">
       <div className="window dialog-window">
         <div className="title-bar">
-          <div className="title-bar-text">About Notepad</div>
+          <div className="title-bar-text" id="about-dialog-title">About Notepad</div>
         </div>
         <div className="window-body about-content">
           <div className="about-icon">

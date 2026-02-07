@@ -83,7 +83,6 @@ textarea,
 }
 
 .status-bar-field {
-  flex: 1;
   padding: 0 4px;
   font-size: 11px;
   line-height: 16px;
@@ -92,6 +91,15 @@ textarea,
   color: #e0e0e0;
   box-shadow: inset -1px -1px #333333,
               inset 1px 1px #1a1a1a;
+}
+
+.status-bar-position {
+  flex: 1;
+}
+
+.status-bar-info {
+  padding: 0 8px;
+  white-space: nowrap;
 }
 
 /* Dialog overlay — dark mode default */
@@ -110,6 +118,17 @@ textarea,
 
 .dialog-overlay.hidden {
   display: none;
+}
+
+/* Non-modal floating dialog (Find/Replace) */
+.dialog-floating {
+  position: fixed;
+  z-index: 1000;
+  /* No background overlay — user can still interact with the editor */
+}
+
+.dialog-floating .dialog-window .title-bar {
+  cursor: move;
 }
 
 /* Dialog windows */
@@ -377,7 +396,12 @@ fieldset legend {
 }
 
 .menu-option.disabled {
-  color: #666666;
+  color: #999999;
+}
+
+.menu-option.focused {
+  background-color: #000080;
+  color: #ffffff;
 }
 
 .menu-option .shortcut {
@@ -489,7 +513,12 @@ body:not(.dark-mode) .menu-option {
 }
 
 body:not(.dark-mode) .menu-option.disabled {
-  color: #808080;
+  color: #595959;
+}
+
+body:not(.dark-mode) .menu-option.focused {
+  background-color: #000080;
+  color: #ffffff;
 }
 
 body:not(.dark-mode) .menu-separator {

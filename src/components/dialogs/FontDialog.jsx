@@ -26,6 +26,21 @@ export default function FontDialog({ onClose, onApply, currentFont }) {
   const [selectedFamily, setSelectedFamily] = useState(currentFont.family);
   const [selectedStyle, setSelectedStyle] = useState(currentFont.style);
   const [selectedSize, setSelectedSize] = useState(currentFont.size);
+  const [availableFonts, setAvailableFonts] = useState(fontFamilies);
+
+  useEffect(() => {
+    // Filter to fonts actually available on this system
+    const available = fontFamilies.filter((f) => {
+      if (f.value === 'monospace') return true; // System fallback always available
+      const primaryFont = f.value.split(',')[0].trim().replace(/'/g, '');
+      return document.fonts.check(`12px "${primaryFont}"`);
+    });
+    // Ensure System Monospace is always present
+    if (!available.find(f => f.value === 'monospace')) {
+      available.push({ label: 'System Monospace', value: 'monospace' });
+    }
+    setAvailableFonts(available);
+  }, []);
 
   const sampleStyle = {
     fontFamily: selectedFamily,
@@ -34,14 +49,16 @@ export default function FontDialog({ onClose, onApply, currentFont }) {
     fontStyle: selectedStyle.includes('italic') ? 'italic' : 'normal',
   };
 
-  const currentFamilyLabel = fontFamilies.find(f => f.value === selectedFamily)?.label || 'Lucida Console';
+  const currentFamilyLabel = availableFonts.find(f => f.value === selectedFamily)?.label
+    || fontFamilies.find(f => f.value === selectedFamily)?.label
+    || 'Lucida Console';
   const currentStyleLabel = fontStyles.find(f => f.value === selectedStyle)?.label || 'Regular';
 
   return (
-    <div className="dialog-overlay">
+    <div className="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="font-dialog-title">
       <div className="window dialog-window dialog-large">
         <div className="title-bar">
-          <div className="title-bar-text">Font</div>
+          <div className="title-bar-text" id="font-dialog-title">Font</div>
           <div className="title-bar-controls">
             <button aria-label="Close" onClick={onClose}>&times;</button>
           </div>
@@ -51,10 +68,12 @@ export default function FontDialog({ onClose, onApply, currentFont }) {
             <div className="font-column">
               <label>Font:</label>
               <input type="text" readOnly value={currentFamilyLabel} />
-              <div className="font-listbox">
-                {fontFamilies.map((f) => (
+              <div className="font-listbox" role="listbox" aria-label="Font family">
+                {availableFonts.map((f) => (
                   <div
                     key={f.value}
+                    role="option"
+                    aria-selected={selectedFamily === f.value}
                     className={`font-listbox-item${selectedFamily === f.value ? ' selected' : ''}`}
                     onClick={() => setSelectedFamily(f.value)}
                   >
@@ -66,10 +85,12 @@ export default function FontDialog({ onClose, onApply, currentFont }) {
             <div className="font-column-small">
               <label>Font Style:</label>
               <input type="text" readOnly value={currentStyleLabel} />
-              <div className="font-listbox">
+              <div className="font-listbox" role="listbox" aria-label="Font style">
                 {fontStyles.map((s) => (
                   <div
                     key={s.value}
+                    role="option"
+                    aria-selected={selectedStyle === s.value}
                     className={`font-listbox-item${selectedStyle === s.value ? ' selected' : ''}`}
                     onClick={() => setSelectedStyle(s.value)}
                   >
@@ -81,10 +102,12 @@ export default function FontDialog({ onClose, onApply, currentFont }) {
             <div className="font-column-small">
               <label>Size:</label>
               <input type="text" readOnly value={selectedSize} />
-              <div className="font-listbox">
+              <div className="font-listbox" role="listbox" aria-label="Font size">
                 {fontSizes.map((sz) => (
                   <div
                     key={sz}
+                    role="option"
+                    aria-selected={selectedSize === sz}
                     className={`font-listbox-item${selectedSize === sz ? ' selected' : ''}`}
                     onClick={() => setSelectedSize(sz)}
                   >

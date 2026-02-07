@@ -17,10 +17,10 @@ export default function GoToLineDialog({ onClose, onGoTo }) {
   };
 
   return (
-    <div className="dialog-overlay">
+    <div className="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="goto-dialog-title">
       <div className="window dialog-window dialog-small">
         <div className="title-bar">
-          <div className="title-bar-text">Go To Line</div>
+          <div className="title-bar-text" id="goto-dialog-title">Go To Line</div>
           <div className="title-bar-controls">
             <button aria-label="Close" onClick={onClose}>&times;</button>
           </div>

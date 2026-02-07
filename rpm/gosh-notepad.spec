@@ -1,13 +1,13 @@
 %global debug_package %{nil}
 Name:           gosh-notepad
-Version:        2.0.1
+Version:        3.0.1
 Release:        1%{?dist}
 Summary:        A Windows 95/98 Notepad clone built with Electron
 License:        MIT
 URL:            https://github.com/goshitsarch-eng/gosh-notepad-cloned
 Source0:        %{name}-%{version}.tar.gz
 
-BuildRequires:  nodejs >= 18
+BuildRequires:  nodejs >= 20
 BuildRequires:  npm
 Requires:       electron
 
@@ -66,6 +66,11 @@ install -Dm 644 assets/icons/icon.png %{buildroot}%{_datadir}/icons/hicolor/256x
 %{_datadir}/icons/hicolor/256x256/apps/%{name}.png
 
 %changelog
+* Sat Feb 07 2026 Goshitsarch <goshitsarch@users.noreply.github.com> - 3.0.1-1
+- Bump to v3.0.1
+- Require Node.js >= 20
+- Fix license and metadata consistency
+
 * Fri Jan 31 2025 Goshitsarch <goshitsarch@users.noreply.github.com> - 2.0.1-1
 - Migrated from Tauri/Svelte to Electron/React
 - Dark mode enabled by default
