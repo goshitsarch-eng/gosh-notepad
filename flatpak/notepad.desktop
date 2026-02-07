@@ -8,4 +8,4 @@ Type=Application
 Categories=Utility;TextEditor;
 MimeType=text/plain;text/x-log;
 Keywords=text;editor;notepad;
-StartupWMClass=notepad
+StartupWMClass=gosh-notepad

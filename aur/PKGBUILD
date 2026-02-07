@@ -1,6 +1,6 @@
 # Maintainer: Goshitsarch <https://github.com/goshitsarch-eng>
 pkgname=gosh-notepad
-pkgver=3.0.1
+pkgver=3.1.2
 pkgrel=1
 pkgdesc="A Windows 95/98 Notepad clone built with Electron"
 arch=('x86_64')

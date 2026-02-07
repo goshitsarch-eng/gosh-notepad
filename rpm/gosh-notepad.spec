@@ -1,6 +1,6 @@
 %global debug_package %{nil}
 Name:           gosh-notepad
-Version:        3.0.1
+Version:        3.1.2
 Release:        1%{?dist}
 Summary:        A Windows 95/98 Notepad clone built with Electron
 License:        MIT
@@ -66,8 +66,8 @@ install -Dm 644 assets/icons/icon.png %{buildroot}%{_datadir}/icons/hicolor/256x
 %{_datadir}/icons/hicolor/256x256/apps/%{name}.png
 
 %changelog
-* Sat Feb 07 2026 Goshitsarch <goshitsarch@users.noreply.github.com> - 3.0.1-1
-- Bump to v3.0.1
+* Sat Feb 07 2026 Goshitsarch <goshitsarch@users.noreply.github.com> - 3.1.2-1
+- Bump to v3.1.2
 - Require Node.js >= 20
 - Fix license and metadata consistency
 

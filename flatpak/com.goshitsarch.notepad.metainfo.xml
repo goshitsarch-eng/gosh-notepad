@@ -24,6 +24,9 @@
   <url type="homepage">https://github.com/goshitsarch-eng/gosh-notepad-cloned</url>
   <url type="bugtracker">https://github.com/goshitsarch-eng/gosh-notepad-cloned/issues</url>
   <developer_name>Goshitsarch</developer_name>
+  <releases>
+    <release version="3.1.2" date="2026-02-07" />
+  </releases>
   <content_rating type="oars-1.1" />
   <categories>
     <category>Utility</category>
