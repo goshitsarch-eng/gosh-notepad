@@ -48,15 +48,15 @@ On macOS, Ctrl is replaced by Cmd throughout, and shortcut labels in the menus d
 
 ## Installation
 
-Grab a pre-built binary from the [Releases](https://github.com/goshitsarch-eng/gosh-notepad-cloned/releases) page. Builds are available for Windows (x64, arm64), macOS (arm64), and Linux (x64, arm64) in AppImage, deb, rpm, and tar.gz formats.
+Grab a pre-built binary from the [Releases](https://github.com/goshitsarch-eng/gosh-notepad/releases) page. Builds are available for Windows (x64, arm64), macOS (arm64), and Linux (x64, arm64) in AppImage, deb, rpm, and tar.gz formats.
 
 An [AUR package](https://aur.archlinux.org/packages/gosh-notepad) is also available for Arch Linux.
 
 ### Building from source
 
 ```bash
-git clone https://github.com/goshitsarch-eng/gosh-notepad-cloned.git
-cd gosh-notepad-cloned
+git clone https://github.com/goshitsarch-eng/gosh-notepad.git
+cd gosh-notepad
 npm install
 npm run dev       # development (Vite + Electron concurrently)
 npm run build     # production build for your platform

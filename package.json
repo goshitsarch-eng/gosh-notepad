@@ -1,6 +1,6 @@
 {
   "name": "gosh-notepad",
-  "version": "3.1.2",
+  "version": "3.1.3",
   "description": "Windows 95/98 Notepad Clone",
   "author": {
     "name": "Goshitsarch",
@@ -10,7 +10,7 @@
   "main": "electron/main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/goshitsarch-eng/gosh-notepad-cloned"
+    "url": "https://github.com/goshitsarch-eng/gosh-notepad"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -40,6 +40,8 @@
     "wait-on": "^9.0.3"
   },
   "dependencies": {
+    "@fontsource/noto-sans": "^5.2.6",
+    "@fontsource/noto-sans-mono": "^5.2.6",
     "98.css": "^0.1.20",
     "electron-updater": "^6.7.3",
     "react": "^19.2.4",

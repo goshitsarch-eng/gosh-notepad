@@ -198,7 +198,13 @@ app.whenReady().then(() => {
         });
       });
 
-      autoUpdater.checkForUpdatesAndNotify();
+      autoUpdater.on('error', (err) => {
+        console.log('Auto-update error:', err.message);
+      });
+
+      autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+        console.log('Update check failed:', err.message);
+      });
     }
   }
 });

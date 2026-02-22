@@ -36,7 +36,7 @@ export function useNotepad() {
   const [activeDialog, setActiveDialog] = useState(null);
 
   const [currentFont, setCurrentFont] = useState({
-    family: "'Lucida Console', 'Courier New', 'DejaVu Sans Mono', 'Liberation Mono', 'Ubuntu Mono', 'Noto Sans Mono', monospace",
+    family: "'Noto Sans Mono', 'Lucida Console', 'Courier New', 'DejaVu Sans Mono', 'Liberation Mono', 'Ubuntu Mono', monospace",
     style: 'normal',
     size: 12,
   });

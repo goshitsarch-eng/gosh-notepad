@@ -1,10 +1,10 @@
 %global debug_package %{nil}
 Name:           gosh-notepad
-Version:        3.1.2
+Version:        3.1.3
 Release:        1%{?dist}
 Summary:        A Windows 95/98 Notepad clone built with Electron
 License:        MIT
-URL:            https://github.com/goshitsarch-eng/gosh-notepad-cloned
+URL:            https://github.com/goshitsarch-eng/gosh-notepad
 Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  nodejs >= 20
@@ -66,6 +66,12 @@ install -Dm 644 assets/icons/icon.png %{buildroot}%{_datadir}/icons/hicolor/256x
 %{_datadir}/icons/hicolor/256x256/apps/%{name}.png
 
 %changelog
+* Sun Feb 22 2026 Goshitsarch <goshitsarch@users.noreply.github.com> - 3.1.3-1
+- Bundle Noto Sans and Noto Sans Mono fonts for AppImage text rendering
+- Fix auto-updater crash from incorrect repository URL
+- Add auto-updater error handling to prevent unhandled promise rejections
+- Fix repository URLs across all packaging metadata
+
 * Sat Feb 07 2026 Goshitsarch <goshitsarch@users.noreply.github.com> - 3.1.2-1
 - Bump to v3.1.2
 - Require Node.js >= 20

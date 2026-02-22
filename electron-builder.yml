@@ -2,7 +2,7 @@ appId: com.goshitsarch.notepad
 publish:
   provider: github
   owner: goshitsarch-eng
-  repo: gosh-notepad-cloned
+  repo: gosh-notepad
 productName: Gosh Notepad
 directories:
   output: release
