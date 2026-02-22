@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.4] - 2026-02-22
+
+### Fixed
+
+- **Chromium native UI font rendering on immutable distros** — Bundled TTF fonts as extraResources (outside the asar archive) so fontconfig + Skia can find them for title bar, window chrome, and menu text on systems like Bazzite and Fedora Atomic
+- **fontconfig integration** — Added automatic fontconfig configuration on Linux that points Chromium to the bundled TTF fonts before the renderer initializes, eliminating "Could not find any font" and `glyph_count: 0` errors
+
 ## [3.1.3] - 2026-02-22
 
 ### Fixed

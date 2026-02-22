@@ -1,8 +1,27 @@
+// Bundle fontconfig for Linux systems missing fonts (e.g., Bazzite, Fedora Atomic).
+// Must run before require('electron') so Chromium's Skia picks up the config.
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+
+if (process.platform === 'linux') {
+  const fontsDir = path.join(process.resourcesPath, 'fonts');
+  if (fs.existsSync(fontsDir)) {
+    const conf = `<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<fontconfig>
+  <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
+  <dir>${fontsDir}</dir>
+</fontconfig>`;
+    const confPath = path.join(os.tmpdir(), `gosh-notepad-fonts-${process.pid}.conf`);
+    fs.writeFileSync(confPath, conf);
+    process.env.FONTCONFIG_FILE = confPath;
+  }
+}
+
 const { app, BrowserWindow, ipcMain, dialog, Menu, nativeTheme } = require('electron');
 const { autoUpdater } = require('electron-updater');
-const fs = require('fs');
 const fsPromises = require('fs/promises');
-const path = require('path');
 
 let mainWindow;
 
@@ -215,6 +234,14 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+// Clean up temporary fontconfig file on quit
+if (process.platform === 'linux') {
+  app.on('quit', () => {
+    const confPath = path.join(os.tmpdir(), `gosh-notepad-fonts-${process.pid}.conf`);
+    try { fs.unlinkSync(confPath); } catch {}
+  });
+}
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {

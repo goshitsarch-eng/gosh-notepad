@@ -1,6 +1,6 @@
 %global debug_package %{nil}
 Name:           gosh-notepad
-Version:        3.1.3
+Version:        3.1.4
 Release:        1%{?dist}
 Summary:        A Windows 95/98 Notepad clone built with Electron
 License:        MIT
@@ -66,6 +66,10 @@ install -Dm 644 assets/icons/icon.png %{buildroot}%{_datadir}/icons/hicolor/256x
 %{_datadir}/icons/hicolor/256x256/apps/%{name}.png
 
 %changelog
+* Sun Feb 22 2026 Goshitsarch <goshitsarch@users.noreply.github.com> - 3.1.4-1
+- Bundle TTF fonts as extraResources for Chromium native UI font rendering
+- Add fontconfig setup for Linux systems missing standard font packages
+
 * Sun Feb 22 2026 Goshitsarch <goshitsarch@users.noreply.github.com> - 3.1.3-1
 - Bundle Noto Sans and Noto Sans Mono fonts for AppImage text rendering
 - Fix auto-updater crash from incorrect repository URL
