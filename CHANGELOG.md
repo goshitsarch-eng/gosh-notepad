@@ -1,5 +1,33 @@
 # Changelog
 
+## [3.1.5] - 2026-04-17
+
+### Fixed
+
+- **Drag-and-drop** — was silently broken on Electron ≥32 where `File.path` was removed; preload now resolves the path via `webUtils.getPathForFile` and reads through a dedicated, validated channel
+- **Replace All undo history** — now preserves the undo stack (previously `editor.value = ...` clobbered it, so Ctrl+Z could not restore the pre-replace text)
+- **About dialog version** — now reads from `package.json` so future bumps stay in sync automatically
+
+### Security
+
+- **IPC allowlist for `read-file-by-path`** — rejects any path the main process did not explicitly authorize (CLI args, macOS Finder open, second-instance); drag-drop uses a separate trusted channel validated in preload
+- **Removed unreachable path-traversal check** in `save-file` — the condition was always false
+- **Hardened CSP** — added `object-src 'none'`, `base-uri 'self'`, `frame-src 'none'`, `form-action 'none'`
+- **Dependency CVEs** — resolved 14 advisories (3 moderate, 11 high) via `npm audit fix`, including Vite dev-server path traversal, Rollup arbitrary file write, tar symlink chain escape, undici WebSocket overflows, lodash code injection, and minimatch/picomatch ReDoS
+
+### Performance
+
+- **`performGoTo`** — single-pass O(1) memory; no longer materializes a full lines array for each Go-To-Line
+- **Recovery auto-save** — skips writes when the buffer is unchanged since the last snapshot
+- **`onOpenFileFromArg`** — now returns an unsubscribe so the `useEffect` cleans up properly
+
+### Dependencies
+
+- electron 40 → 41
+- jsdom 28 → 29
+- patch/minor bumps across react, react-dom, electron-updater, electron-builder, vitest, wait-on, @vitejs/plugin-react
+- Vite held at 7.3.2 (patched) — Vite 8's default lightningcss minifier rejects invalid CSS in `98.css`
+
 ## [3.1.4] - 2026-02-22
 
 ### Fixed
