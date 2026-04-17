@@ -25,6 +25,18 @@ const fsPromises = require('fs/promises');
 
 let mainWindow;
 
+// Paths main has authorized the renderer to read (CLI args, macOS open-file, second-instance).
+// read-file-by-path checks this set so a compromised renderer can't exfiltrate arbitrary files.
+// Drag-drop uses a separate read-dropped-file channel validated in preload via webUtils.getPathForFile.
+const authorizedReadPaths = new Set();
+
+function authorizeAndSendOpenFile(filePath) {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const resolved = path.resolve(filePath);
+  authorizedReadPaths.add(resolved);
+  mainWindow.webContents.send('open-file-from-arg', resolved);
+}
+
 // Encoding detection and conversion utilities
 function detectEncoding(buffer) {
   if (buffer.length >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
@@ -109,8 +121,8 @@ if (!gotLock) {
 } else {
   app.on('second-instance', (_event, argv) => {
     const filePath = getFileFromArgs(argv);
-    if (filePath && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('open-file-from-arg', filePath);
+    if (filePath) {
+      authorizeAndSendOpenFile(filePath);
     }
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
@@ -175,16 +187,14 @@ app.whenReady().then(() => {
   const fileArg = getFileFromArgs(process.argv);
   if (fileArg) {
     mainWindow.webContents.once('did-finish-load', () => {
-      mainWindow.webContents.send('open-file-from-arg', fileArg);
+      authorizeAndSendOpenFile(fileArg);
     });
   }
 
   // Handle macOS open-file event (e.g., from Finder)
   app.on('open-file', (event, filePath) => {
     event.preventDefault();
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('open-file-from-arg', path.resolve(filePath));
-    }
+    authorizeAndSendOpenFile(filePath);
   });
 
   // Auto-update via electron-updater:
@@ -283,10 +293,6 @@ ipcMain.handle('save-file', async (_event, filePath, content, encoding) => {
       return { success: false, error: 'Invalid file path: null bytes are not allowed' };
     }
     const resolved = path.resolve(filePath);
-    const normalized = path.normalize(filePath);
-    if (resolved !== path.resolve(normalized)) {
-      return { success: false, error: 'Invalid file path: path traversal detected' };
-    }
     const buffer = encodeString(content, encoding || 'UTF-8');
     await fsPromises.writeFile(resolved, buffer);
     return { success: true, path: resolved };
@@ -360,9 +366,35 @@ ipcMain.handle('set-preferences', (_event, prefs) => {
 // Issue #13: OS-level dark mode detection
 ipcMain.handle('get-system-dark-mode', () => nativeTheme.shouldUseDarkColors);
 
-// Issue #31: Read a file by path (for drag-and-drop and CLI argument handling)
+// Read a file that main has authorized (CLI arg / macOS open-file / second-instance).
+// Rejects arbitrary paths from the renderer to contain blast radius if renderer is ever compromised.
 ipcMain.handle('read-file-by-path', async (_event, filePath) => {
   try {
+    if (typeof filePath !== 'string') {
+      return { success: false, error: 'Invalid path' };
+    }
+    const resolved = path.resolve(filePath);
+    if (!authorizedReadPaths.has(resolved)) {
+      return { success: false, error: 'Path not authorized' };
+    }
+    authorizedReadPaths.delete(resolved);
+    const buffer = await fsPromises.readFile(resolved);
+    const encoding = detectEncoding(buffer);
+    const content = decodeBuffer(buffer, encoding);
+    return { success: true, path: resolved, content, encoding };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// Read a path that preload extracted from a dropped File via webUtils.getPathForFile.
+// Trusted because this channel is only reachable through preload's readDroppedFile wrapper,
+// which validates the File object (JS-constructed Files return empty string and are rejected there).
+ipcMain.handle('read-dropped-file', async (_event, filePath) => {
+  try {
+    if (typeof filePath !== 'string' || !filePath) {
+      return { success: false, error: 'Invalid path' };
+    }
     const resolved = path.resolve(filePath);
     const buffer = await fsPromises.readFile(resolved);
     const encoding = detectEncoding(buffer);

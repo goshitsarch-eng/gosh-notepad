@@ -5,13 +5,14 @@ const api = window.electronAPI || {
   saveFile: () => Promise.resolve({ success: false }),
   saveFileAs: () => Promise.resolve({ success: false }),
   readFileByPath: () => Promise.resolve({ success: false }),
+  readDroppedFile: () => Promise.resolve({ success: false }),
   printDocument: () => {},
   setWindowTitle: () => {},
   quitApp: () => {},
   forceQuit: () => {},
   onCheckUnsavedBeforeClose: () => {},
   removeCheckUnsavedBeforeClose: () => {},
-  onOpenFileFromArg: () => {},
+  onOpenFileFromArg: () => () => {},
   getPreferences: () => Promise.resolve({}),
   setPreferences: () => Promise.resolve({ success: true }),
   getSystemDarkMode: () => Promise.resolve(false),
@@ -367,17 +368,17 @@ export function useNotepad() {
     const editor = editorRef.current;
     if (!editor || !findQuery) return;
 
-    let text = editor.value;
-    let count = 0;
-
     const flags = matchCase ? 'g' : 'gi';
     const regex = new RegExp(findQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), flags);
-    const matches = text.match(regex);
-    count = matches ? matches.length : 0;
-    text = text.replace(regex, replaceWith.replace(/\$/g, '$$$$'));
+    const matches = editor.value.match(regex);
+    const count = matches ? matches.length : 0;
 
     if (count > 0) {
-      editor.value = text;
+      // insertText via execCommand preserves undo history — raw editor.value = ... would clobber it.
+      const next = editor.value.replace(regex, replaceWith.replace(/\$/g, '$$$$'));
+      editor.focus();
+      editor.setSelectionRange(0, editor.value.length);
+      document.execCommand('insertText', false, next);
       handleEditorInput();
     }
 
@@ -388,15 +389,20 @@ export function useNotepad() {
     const editor = editorRef.current;
     if (!editor || !lineNum || lineNum < 1) return;
 
-    const lines = editor.value.split('\n');
-    if (lineNum > lines.length) {
-      showMessage('The line number is beyond the total number of lines');
-      return;
+    // Single pass: short-circuit at target, O(1) memory — avoids allocating a lines array for large files.
+    const text = editor.value;
+    let line = 1;
+    let charIndex = 0;
+    for (let i = 0; i < text.length && line < lineNum; i++) {
+      if (text.charCodeAt(i) === 10) {
+        line++;
+        charIndex = i + 1;
+      }
     }
 
-    let charIndex = 0;
-    for (let i = 0; i < lineNum - 1; i++) {
-      charIndex += lines[i].length + 1;
+    if (line < lineNum) {
+      showMessage('The line number is beyond the total number of lines');
+      return;
     }
 
     editor.setSelectionRange(charIndex, charIndex);
@@ -405,11 +411,11 @@ export function useNotepad() {
     updateCursorPosition();
   }, [updateCursorPosition, showMessage]);
 
-  // Drag-and-drop file opening
-  const handleFileDrop = useCallback(async (filePath) => {
+  // Drag-and-drop file opening — pass the File object; preload resolves the path via webUtils.
+  const handleFileDrop = useCallback(async (file) => {
     const canProceed = await checkUnsavedChanges();
     if (!canProceed) return;
-    const result = await api.readFileByPath(filePath);
+    const result = await api.readDroppedFile(file);
     if (result.success) {
       const detectedEnding = result.content.includes('\r\n') ? '\r\n' : '\n';
       setLineEnding(detectedEnding);
@@ -542,7 +548,8 @@ export function useNotepad() {
         if (editor) editor.focus();
       }
     };
-    api.onOpenFileFromArg(handleFileFromArg);
+    const unsubscribe = api.onOpenFileFromArg(handleFileFromArg);
+    return () => { if (typeof unsubscribe === 'function') unsubscribe(); };
   }, [updateTitle, updateCursorPosition]);
 
   // Issue #11 + #13: Load preferences on mount, falling back to OS dark mode if no saved pref
@@ -617,12 +624,20 @@ export function useNotepad() {
     setActiveDialog(null);
   }, [recoveryData, updateTitle, updateCursorPosition]);
 
-  // Issue #36: Auto-save recovery file every 30s when there are unsaved changes
+  // Issue #36: Auto-save recovery file every 30s when there are unsaved changes.
+  // Skip writes when the buffer hasn't changed since the last save so an idle unsaved
+  // editor doesn't spam disk I/O (especially painful for large files).
+  const lastRecoveryContentRef = useRef(null);
   useEffect(() => {
     if (!hasUnsavedChanges) return;
+    // Clear on each dirty transition — after save we clearRecovery on disk, so the next
+    // write must actually hit disk even if the buffer equals the previous recovery snapshot.
+    lastRecoveryContentRef.current = null;
     const timer = setInterval(() => {
       const editor = editorRef.current;
       if (!editor) return;
+      if (editor.value === lastRecoveryContentRef.current) return;
+      lastRecoveryContentRef.current = editor.value;
       api.saveRecovery({
         content: editor.value,
         originalPath: currentFilePath,

@@ -42,9 +42,7 @@ export default function Editor({ editorRef, wordWrap, onInput, onCursorMove, onA
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.path && onDrop) {
-      onDrop(file.path);
-    }
+    if (file && onDrop) onDrop(file);
   }, [onDrop]);
 
   return (
