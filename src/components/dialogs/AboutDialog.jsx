@@ -1,4 +1,5 @@
 import React from 'react';
+import { version } from '../../../package.json';
 
 export default function AboutDialog({ onClose }) {
   return (
@@ -18,7 +19,7 @@ export default function AboutDialog({ onClose }) {
             </svg>
           </div>
           <h3>Notepad</h3>
-          <p>Version 3.1.4</p>
+          <p>Version {version}</p>
           <hr />
           <p className="about-description">
             A Windows 95/98 Notepad clone<br />
